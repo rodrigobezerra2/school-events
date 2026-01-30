@@ -52,11 +52,17 @@ elements.form.addEventListener('submit', async (e) => {
     try {
         let encryptedContent;
         try {
+            console.log("Fetching events.json...");
             const response = await fetch('./events.json');
-            if (!response.ok) throw new Error("File not found");
+            if (!response.ok) {
+                console.error("Fetch failed with status:", response.status);
+                throw new Error(`Data file not found (Status: ${response.status}). If you are running on GitHub Pages, remember that events.json is not public!`);
+            }
             encryptedContent = await response.text();
+            console.log("Encrypted content received (length):", encryptedContent.length);
         } catch (err) {
-            throw new Error("events.json not found. Run the extraction first!");
+            console.error("Detailed Fetch Error:", err);
+            throw new Error(`Could not load events: ${err.message}`);
         }
 
         if (encryptedContent.startsWith("v1|")) {
@@ -563,7 +569,10 @@ async function tryAutoLogin() {
         elements.overlay.classList.add('hidden'); // Hide prompt immediately
         elements.loading.classList.remove('hidden');
 
+        console.log("Attempting auto-login...");
         const response = await fetch('./events.json');
+        if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+
         const encryptedContent = await response.text();
 
         if (encryptedContent.startsWith("v1|")) {
