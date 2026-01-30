@@ -53,13 +53,21 @@ elements.form.addEventListener('submit', async (e) => {
         let encryptedContent;
         try {
             console.log("Fetching events.json...");
-            const response = await fetch('./events.json');
+            let response = await fetch('./events.json');
+
+            if (!response.ok && response.status === 404) {
+                console.warn("Private events.json not found. Falling back to mock_events.json for demo.");
+                response = await fetch('./mock_events.json');
+                if (!response.ok) throw new Error("Could not find events.json or mock_events.json");
+                window.isDemoMode = true;
+            }
+
             if (!response.ok) {
                 console.error("Fetch failed with status:", response.status);
-                throw new Error(`Data file not found (Status: ${response.status}). If you are running on GitHub Pages, remember that events.json is not public!`);
+                throw new Error(`Data file not found (Status: ${response.status}).`);
             }
             encryptedContent = await response.text();
-            console.log("Encrypted content received (length):", encryptedContent.length);
+            console.log("Data received (length):", encryptedContent.length);
         } catch (err) {
             console.error("Detailed Fetch Error:", err);
             throw new Error(`Could not load events: ${err.message}`);
