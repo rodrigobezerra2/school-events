@@ -27,7 +27,7 @@ public class Main {
         // Cloud & Security Config
         String googleCreds = config.get("GOOGLE_CREDENTIALS_JSON");
         String driveFolder = config.get("DRIVE_FOLDER_ID");
-        String uiPassword = config.getOrDefault("UI_PASSWORD", "dogdog21");
+        String uiPassword = config.get("UI_PASSWORD");
 
         // Validate config
         if (gmailUsername == null || gmailPassword == null) {
@@ -52,7 +52,8 @@ public class Main {
             String senderFilter = config.get("SENDER_FILTER");
             var eventRepo = new SqliteEventRepository(dbUrl);
             var emailRepo = new SqliteProcessedEmailRepository(dbUrl);
-            var emailFetcher = new GmailImapAdapter(gmailUsername, gmailPassword, senderFilter, emailRepo);
+            String rescanSince = config.get("RESCAN_SINCE");
+            var emailFetcher = new GmailImapAdapter(gmailUsername, gmailPassword, senderFilter, rescanSince, emailRepo);
             var aiExtractor = new GeminiAiAdapter(geminiApiKey, aiEnabled);
 
             // Cloud Storage Adapter
@@ -73,7 +74,8 @@ public class Main {
             var processInbox = new ProcessInboxUseCase(emailFetcher, aiExtractor, reconciliationService, emailRepo);
 
             // Execute
-            processInbox.execute();
+            boolean forceRescan = Boolean.parseBoolean(config.get("FORCE_RESCAN"));
+            processInbox.execute(forceRescan);
 
             // Log Summary of current DB state
             var allEvents = eventRepo.findAll();
