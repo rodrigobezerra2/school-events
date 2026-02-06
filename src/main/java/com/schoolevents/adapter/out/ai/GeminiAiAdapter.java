@@ -59,6 +59,9 @@ public class GeminiAiAdapter implements AiEventExtractorPort {
             return Collections.emptyList();
         }
 
+        System.out.println("Processing " + emails.size() + " emails with Gemini AI...");
+        emails.forEach(e -> System.out.println(" - Including Email: " + e.subject() + " (ID: " + e.id() + ")"));
+
         try {
             String payload = buildJsonPayload(emails);
 
@@ -71,12 +74,14 @@ public class GeminiAiAdapter implements AiEventExtractorPort {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
+                System.out.println("Gemini AI extraction successful.");
                 return parseResponse(response.body(), emails);
             } else if (response.statusCode() == 429) {
                 System.err.println("Gemini API Quota Error (429): " + response.body());
                 throw new QuotaExhaustedException("Gemini API Quota Exhausted (429)");
             } else {
                 System.err.println("Gemini API Error: " + response.statusCode() + " - " + response.body());
+                System.err.println("Full response body: " + response.body());
                 return Collections.emptyList();
             }
 
@@ -206,7 +211,7 @@ public class GeminiAiAdapter implements AiEventExtractorPort {
             }
         } catch (Exception e) {
             System.err.println("Failed to parse Gemini response: " + e.getMessage());
-            // System.err.println("Debug Body: " + responseBody);
+            System.err.println("Debug Body: " + responseBody);
         }
         return Collections.emptyList();
     }

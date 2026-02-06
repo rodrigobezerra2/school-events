@@ -30,3 +30,4 @@ manual_events.json
 # Scripts & Misc
 *.log
 start_app_*.ps1
+debug/

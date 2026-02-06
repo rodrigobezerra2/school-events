@@ -66,10 +66,17 @@ public class JsonExporter {
                 }
             }
 
-            // 2. Write Local File
+            // 2. Write Local Files
             java.nio.file.Files.writeString(file.toPath(), jsonContent);
             System.out.println("Exported " + events.size() + " events to local file " +
                     (isEncrypted ? "(ENCRYPTED)" : "(PLAIN)") + ": " + file.getAbsolutePath());
+
+            // 2b. Secondary Unencrypted Export (for inspection)
+            if (isEncrypted) {
+                File plainFile = new File(file.getParent(), "events_plain.json");
+                java.nio.file.Files.writeString(plainFile.toPath(), objectMapper.writeValueAsString(events));
+                System.out.println("Exported PLAIN events to: " + plainFile.getAbsolutePath());
+            }
 
             // 2. Upload to Cloud (if enabled)
             if (storagePort != null) {

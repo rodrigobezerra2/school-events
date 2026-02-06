@@ -1,37 +1,33 @@
 package com.schoolevents.launcher;
 
 import com.schoolevents.adapter.out.ai.GeminiAiAdapter;
-import com.schoolevents.adapter.out.cloud.GoogleDriveStorageAdapter;
 import com.schoolevents.adapter.out.email.GmailImapAdapter;
 import com.schoolevents.adapter.out.filesystem.JsonExporter;
 import com.schoolevents.adapter.out.persistence.SchemaInitializer;
 import com.schoolevents.adapter.out.persistence.SqliteEventRepository;
 import com.schoolevents.adapter.out.persistence.SqliteProcessedEmailRepository;
 import com.schoolevents.application.usecase.ProcessInboxUseCase;
-import com.schoolevents.domain.port.out.StoragePort;
 import com.schoolevents.domain.service.EventReconciliationService;
+import com.schoolevents.infrastructure.config.ConfigLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 public class Main {
     public static void main(String[] args) {
+        ConfigLoader config = new ConfigLoader();
+
         // Load configuration
-        String gmailUsername = System.getenv("GMAIL_USERNAME");
-        String gmailPassword = System.getenv("GMAIL_PASSWORD");
-        String geminiApiKey = System.getenv("GEMINI_API_KEY");
-        String aiEnabledStr = System.getenv("AI_ENABLED");
+        String gmailUsername = config.get("GMAIL_USERNAME");
+        String gmailPassword = config.get("GMAIL_PASSWORD");
+        String geminiApiKey = config.get("GEMINI_API_KEY");
+        String aiEnabledStr = config.get("AI_ENABLED");
         boolean aiEnabled = Boolean.parseBoolean(aiEnabledStr == null ? "true" : aiEnabledStr);
-        String dbUrl = System.getenv("DB_URL");
-        if (dbUrl == null)
-            dbUrl = "jdbc:sqlite:school_events.db";
+        String dbUrl = config.getOrDefault("DB_URL", "jdbc:sqlite:school_events.db");
 
         // Cloud & Security Config
-        String googleCreds = System.getenv("GOOGLE_CREDENTIALS_JSON");
-        String driveFolder = System.getenv("DRIVE_FOLDER_ID");
-        String uiPassword = System.getenv("UI_PASSWORD");
-        if (uiPassword == null || uiPassword.isBlank()) {
-            uiPassword = "dogdog21";
-        }
+        String googleCreds = config.get("GOOGLE_CREDENTIALS_JSON");
+        String driveFolder = config.get("DRIVE_FOLDER_ID");
+        String uiPassword = config.getOrDefault("UI_PASSWORD", "dogdog21");
 
         // Validate config
         if (gmailUsername == null || gmailPassword == null) {
@@ -53,7 +49,7 @@ public class Main {
             new DatabaseMaintainer(dbUrl).insertBookBagEvents();
 
             // Adapters
-            String senderFilter = System.getenv("SENDER_FILTER");
+            String senderFilter = config.get("SENDER_FILTER");
             var eventRepo = new SqliteEventRepository(dbUrl);
             var emailRepo = new SqliteProcessedEmailRepository(dbUrl);
             var emailFetcher = new GmailImapAdapter(gmailUsername, gmailPassword, senderFilter, emailRepo);

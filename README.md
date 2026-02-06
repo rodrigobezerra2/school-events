@@ -90,19 +90,35 @@ To upload encrypted events to Google Drive for online viewing:
 
 ## Running Locally
 
-### Build
+### 1. Configure
+Create a `.env` file in the root directory (copy from `.env.example`). 
+
+> [!CAUTION]
+> Never commit your `.env` file or include real credentials in `.env.example`. Ensure `.env` is listed in your `.gitignore`.
+
 ```bash
-mvn clean package
+GMAIL_USERNAME="your-email@gmail.com"
+GMAIL_PASSWORD="xxxx xxxx xxxx xxxx"
+GEMINI_API_KEY="your-key"
 ```
 
-### Run
-```bash
-# Run the JAR
-java -jar target/school-events-organizer-1.0.0-SNAPSHOT.jar
+### 2. Run
+Since configuration is loaded from `.env`, you can run the application with a single command:
 
-# Or via Maven
+```bash
+# Via Maven
 mvn exec:java -Dexec.mainClass="com.schoolevents.launcher.Main"
+
+# Or via JAR (after building with 'mvn package')
+java -jar target/school-events-organizer-1.0.0-SNAPSHOT.jar
 ```
+
+### 3. Manual Extraction Test
+To test extraction on a specific email and generate a debug report:
+```bash
+mvn exec:java -Dexec.mainClass="com.schoolevents.launcher.ManualTest" -Dexec.args="SUBJECT_OF_EMAIL"
+```
+See [WIKI.md](file:///c:/Users/User/Development/projects/school%20events%20organizer/WIKI.md) for more details.
 
 ## Testing
 

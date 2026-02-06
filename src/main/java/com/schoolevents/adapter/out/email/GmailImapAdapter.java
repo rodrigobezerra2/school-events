@@ -55,7 +55,7 @@ public class GmailImapAdapter implements EmailFetcherPort {
             } else {
                 // Fetch generic latest emails
                 int totalMessages = inbox.getMessageCount();
-                int start = Math.max(1, totalMessages - 49); // Fetch last 50
+                int start = Math.max(1, totalMessages - 199); // Fetch last 200
                 int end = totalMessages;
                 messages = totalMessages > 0 ? inbox.getMessages(start, end) : new Message[0];
             }
