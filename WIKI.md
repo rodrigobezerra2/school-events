@@ -61,3 +61,15 @@ The extracted events are saved as a plain JSON array in:
 `debug/manual_extraction.json`
 
 This file is excluded from Git to prevent accidental leakage of unencrypted event data.
+
+## Force Rescan Feature
+
+If you suspect an email was incorrectly processed or you want to "refresh" events from a specific date:
+
+1.  **Open `.env`**.
+2.  Set `FORCE_RESCAN=true`.
+3.  (Optional) Set `RESCAN_SINCE=2026-02-01` to limit the scope.
+4.  Run the application: `mvn exec:java -Dexec.mainClass="com.schoolevents.launcher.Main"`
+
+> [!NOTE]
+> The reconciliation service will attempt to update existing events rather than creating duplicates if the event details are similar.

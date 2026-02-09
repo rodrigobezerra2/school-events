@@ -30,11 +30,21 @@ public class ProcessInboxUseCase {
         this.processedEmailRepository = processedEmailRepository;
     }
 
-    public void execute() {
-        logger.info("Starting inbox processing...");
+    public void execute(boolean forceRescan) {
+        logger.info("Starting inbox processing (Force Rescan: {})...", forceRescan);
         List<EmailMessage> emails = emailFetcher.fetchUnprocessedEmails();
+
+        if (forceRescan) {
+            logger.info("Force Rescan enabled. Will process all fetched emails regardless of history.");
+        } else {
+            // Filter emails that have already been processed
+            emails = emails.stream()
+                    .filter(email -> !processedEmailRepository.isProcessed(email.id()))
+                    .toList();
+        }
+
         int totalEmailsScanned = emails.size();
-        logger.info("Found {} unprocessed emails.", totalEmailsScanned);
+        logger.info("Found {} emails to process.", totalEmailsScanned);
 
         int newEventsCreated = 0;
         int eventsUpdated = 0;

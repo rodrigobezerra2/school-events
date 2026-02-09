@@ -98,9 +98,17 @@ Create a `.env` file in the root directory (copy from `.env.example`).
 
 ```bash
 GMAIL_USERNAME="your-email@gmail.com"
-GMAIL_PASSWORD="xxxx xxxx xxxx xxxx"
-GEMINI_API_KEY="your-key"
+GMAIL_PASSWORD="your-app-password"
+GEMINI_API_KEY="your-api-key"
+FORCE_RESCAN=false
+RESCAN_SINCE="2026-01-01"
 ```
+
+### Configuration Variables
+| Variable | Description |
+| :--- | :--- |
+| `FORCE_RESCAN` | If `true`, re-processes all emails found in the search range even if already in DB. |
+| `RESCAN_SINCE` | (Optional) Search for emails received on or after this date (YYYY-MM-DD). |
 
 ### 2. Run
 Since configuration is loaded from `.env`, you can run the application with a single command:

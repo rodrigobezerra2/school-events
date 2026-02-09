@@ -91,6 +91,41 @@ public class SqliteEventRepository implements EventRepositoryPort {
         return Optional.empty();
     }
 
+    @Override
+    public List<Event> findByDate(LocalDateTime date) {
+        String datePrefix = date.toLocalDate().toString() + "%";
+        String sql = "SELECT * FROM events WHERE start_date LIKE ?";
+        List<Event> events = new ArrayList<>();
+
+        try (Connection conn = DriverManager.getConnection(dbUrl);
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, datePrefix);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    events.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find events by date", e);
+        }
+        return events;
+    }
+
+    @Override
+    public void delete(String id) {
+        String sql = "DELETE FROM events WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(dbUrl);
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete event", e);
+        }
+    }
+
     private Event mapRow(ResultSet rs) throws SQLException {
         return new Event(
                 rs.getString("id"),

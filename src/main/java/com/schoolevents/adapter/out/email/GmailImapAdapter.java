@@ -4,12 +4,9 @@ import com.schoolevents.domain.model.EmailMessage;
 import com.schoolevents.domain.port.out.EmailFetcherPort;
 import com.schoolevents.domain.port.out.ProcessedEmailRepositoryPort;
 import jakarta.mail.*;
-import jakarta.mail.search.FlagTerm;
 import jakarta.mail.search.FromTerm;
 import jakarta.mail.internet.InternetAddress;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -19,14 +16,16 @@ public class GmailImapAdapter implements EmailFetcherPort {
     private final String username;
     private final String password;
     private final String senderFilter;
+    private final String rescanSince;
     private final ProcessedEmailRepositoryPort processedEmailRepository;
     private final EmailParser emailParser;
 
     public GmailImapAdapter(String username, String password, String senderFilter,
-            ProcessedEmailRepositoryPort processedEmailRepository) {
+            String rescanSince, ProcessedEmailRepositoryPort processedEmailRepository) {
         this.username = username;
         this.password = password;
         this.senderFilter = senderFilter;
+        this.rescanSince = rescanSince;
         this.processedEmailRepository = processedEmailRepository;
         this.emailParser = new EmailParser();
     }
@@ -52,12 +51,20 @@ public class GmailImapAdapter implements EmailFetcherPort {
             if (senderFilter != null && !senderFilter.isBlank()) {
                 System.out.println("Applying sender filter: " + senderFilter);
                 messages = inbox.search(new FromTerm(new InternetAddress(senderFilter)));
+            } else if (rescanSince != null && !rescanSince.isBlank()) {
+                System.out.println("Applying date filter: Since " + rescanSince);
+                // Expected format: YYYY-MM-DD
+                try {
+                    java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                    java.util.Date sinceDate = df.parse(rescanSince);
+                    messages = inbox.search(
+                            new jakarta.mail.search.ReceivedDateTerm(jakarta.mail.search.ComparisonTerm.GE, sinceDate));
+                } catch (Exception e) {
+                    System.err.println("Invalid RESCAN_SINCE format (expected YYYY-MM-DD): " + rescanSince);
+                    messages = fetchLatest(inbox);
+                }
             } else {
-                // Fetch generic latest emails
-                int totalMessages = inbox.getMessageCount();
-                int start = Math.max(1, totalMessages - 199); // Fetch last 200
-                int end = totalMessages;
-                messages = totalMessages > 0 ? inbox.getMessages(start, end) : new Message[0];
+                messages = fetchLatest(inbox);
             }
 
             // Iterate backwards
@@ -65,7 +72,7 @@ public class GmailImapAdapter implements EmailFetcherPort {
                 Message msg = messages[i];
                 String messageId = getMessageId(msg);
 
-                if (messageId != null && !processedEmailRepository.isProcessed(messageId)) {
+                if (messageId != null) {
                     try {
                         result.add(emailParser.parse(msg, messageId));
                     } catch (Exception e) {
@@ -82,6 +89,13 @@ public class GmailImapAdapter implements EmailFetcherPort {
         }
 
         return result;
+    }
+
+    private Message[] fetchLatest(Folder inbox) throws MessagingException {
+        int totalMessages = inbox.getMessageCount();
+        int start = Math.max(1, totalMessages - 199); // Fetch last 200
+        int end = totalMessages;
+        return totalMessages > 0 ? inbox.getMessages(start, end) : new Message[0];
     }
 
     private String getMessageId(Message msg) {
